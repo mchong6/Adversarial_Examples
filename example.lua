@@ -6,6 +6,7 @@ require('paths')
 require 'cunn'
 require 'loadcaffe'
 local ad = require('adversarial');
+local ad_label = require('adversarial_label');
 torch.setdefaulttensortype('torch.FloatTensor')
 torch.manualSeed(300)
 
@@ -14,7 +15,7 @@ local label_nb = 286         -- label of 'bee'
 local mean = 118.380948/255  -- global mean used to train overfeat
 local std = 61.896913/255    -- global std used to train overfeat
 local intensity = 1          -- pixel intensity for gradient sign
-epoch = 10
+local choice = 1             -- 0 for minimize wrt to class, 1 for label
 
 local path_img = 'dog.jpg'
 local path_img2 = 'cat.jpg'
@@ -72,9 +73,14 @@ model.modules[#model.modules] = nn.LogSoftMax()
 model = model:cuda()
 
 -- set loss function
-local loss = nn.MSECriterion():cuda() 
+if choice == 0 then
+    local loss = nn.MSECriterion():cuda() 
+    noise = ad.adversarial_fast(model, loss, imgA:clone(), idx, std, intensity)
+else
+    local loss = nn.ClassNLLCriterion():cuda()
+    noise = ad_label.adversarial_fast(model, loss, imgA:clone(), label_nb, std, intensity)
+end
 -- generate adversarial examples
-local noise = ad.adversarial_fast(model, loss, imgA:clone(), idx, std, intensity)
 
 --change last layer back to original softmax
 model:evaluate()
