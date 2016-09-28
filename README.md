@@ -20,4 +20,3 @@ The example script predicts the output category of original and its adversarial 
 th example.lua
 ```
 
-![](example.png)
