@@ -38,4 +38,4 @@ Theta
 Image + Gaussian(0,10) + theta. 95% confidence for Cocker Spaniel
 
 Here I used MSE to reduce the actual classification of the image. The resulting image's high
-confidence classification is very close to the actual classificaion.
+confidence classification is very close to the actual classification.
