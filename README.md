@@ -1,7 +1,7 @@
 ## Adversarial example generator
 
 This script generates adversarial examples for convolutional neural networks
-by minimizing the correct classification label of the original image. Adversarial
+by minimizing the correct classification label of dog.jpthe original image. Adversarial
 examples are trained with multiple versions of the same image with added Gaussian
 noise.
 
@@ -26,3 +26,5 @@ on the Gaussian added images will work on a new batch of Gaussian added images.
 th example.lua
 ```
 ![](dog.jpg)
+![](https://github.com/mchong6/Adversarial_Examples/blob/master/MSE_1e4/image%2Bgaus/Ad_1.jpg)
+
