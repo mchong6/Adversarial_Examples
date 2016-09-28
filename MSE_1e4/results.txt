@@ -1,0 +1,10 @@
+Image1: n02102318 cocker spaniel, English cocker spaniel, cocker with confidence: 0.94685298204422
+Image2: n02102318 cocker spaniel, English cocker spaniel, cocker with confidence: 0.94863098859787
+Image3: n02102318 cocker spaniel, English cocker spaniel, cocker with confidence: 0.94696927070618
+Image4: n02102318 cocker spaniel, English cocker spaniel, cocker with confidence: 0.95682430267334
+Image5: n02102318 cocker spaniel, English cocker spaniel, cocker with confidence: 0.95479965209961
+Image6: n02102318 cocker spaniel, English cocker spaniel, cocker with confidence: 0.96440869569778
+Image7: n02102318 cocker spaniel, English cocker spaniel, cocker with confidence: 0.97865372896194
+Image8: n02102318 cocker spaniel, English cocker spaniel, cocker with confidence: 0.93595194816589
+Image9: n02102318 cocker spaniel, English cocker spaniel, cocker with confidence: 0.95342564582825
+Image10: n02102318 cocker spaniel, English cocker spaniel, cocker with confidence: 0.94839888811111
