@@ -25,6 +25,6 @@ on the Gaussian added images will work on a new batch of Gaussian added images.
 ```bash
 th example.lua
 ```
-![](dog.jpg=100x20)
+![](dog.jpg =200x200)
 ![](./MSE_1e4/image+gaus/Ad_1.jpg)
 
