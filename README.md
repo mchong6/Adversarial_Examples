@@ -17,7 +17,7 @@ or VGG19 network. Also requires torch and CUDA.
 The example script predicts the output category of original and its adversarial examples.
 It first generates 10 copies of an input image. Each copies is added a small amount of 
 Gaussian Noise. The network then finds a noise, theta, that when added to these images,
-minimizes the actual classification of the image.
+minimizes the actual classification of the image.https://github.com/mchong6/Adversarial_Examples/blob/master/MSE_1e4/image%2Bgaus/Ad_1.jpg
 
 The script then generates another batch of images with small amount of Gaussian Noise
 in them and then add theta to them. We want to test if this theta which was trained
@@ -26,5 +26,5 @@ on the Gaussian added images will work on a new batch of Gaussian added images.
 th example.lua
 ```
 ![](dog.jpg)
-![](https://github.com/mchong6/Adversarial_Examples/blob/master/MSE_1e4/image%2Bgaus/Ad_1.jpg)
+![](./MSE_1e4/image+gaus/Ad_1.jpg)
 
