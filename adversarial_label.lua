@@ -1,9 +1,6 @@
 require('nn')
 require('gnuplot')
 
--- "Explaining and harnessing adversarial examples"
--- Ian Goodfellow, 2015
--- so that we can use the functions here
 local adversarial_label = {};
 
 local function noise(input)
