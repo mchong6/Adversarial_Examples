@@ -25,11 +25,10 @@ local function adversarial_fast(model, loss, x, y, std, intensity, copies)
     end
     local theta = x:clone():zero()
    --create random copies of x
-    x = torch.repeatTensor(x, 10, 1, 1, 1):cuda()
+    x = torch.repeatTensor(x, copies, 1, 1, 1):cuda()
     x:add(noise(x))
     
-    local add_noise = noise(x)
-    for i = 0, 200 do
+    for i = 0, 50 do
         gradParameters:zero()
         --clone x so that we dont edit original batch
         local x_batch = x:clone()
@@ -38,7 +37,6 @@ local function adversarial_fast(model, loss, x, y, std, intensity, copies)
             x_batch[i] = x_batch[i] + theta
         end
         -- compute output
-        --local addition = add_noise:add(x):cuda()
         local y_hat = model:updateOutput(x_batch)
     
         --show that extraction of class is correct
@@ -47,7 +45,7 @@ local function adversarial_fast(model, loss, x, y, std, intensity, copies)
         print(f)
         local cost = loss:backward(y_hat, y) 
         local x_grad = model:updateGradInput(theta, cost)
-        local grad = x_grad * 1e5
+        local grad = x_grad * 1e6
         theta = theta - grad
     end
 

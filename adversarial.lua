@@ -27,7 +27,6 @@ local function adversarial_fast(model, loss, x, y, std, intensity, copies)
     x = torch.repeatTensor(x, copies, 1, 1, 1):cuda()
     x:add(noise(x))
     
-    local add_noise = noise(x)
     for i = 0, 20 do
         gradParameters:zero()
         --clone x so that we dont edit original batch
@@ -37,7 +36,6 @@ local function adversarial_fast(model, loss, x, y, std, intensity, copies)
             x_batch[i] = x_batch[i] + theta
         end
         -- compute output
-        --local addition = add_noise:add(x):cuda()
         --use Linear to select only the correct class
         model:add(nn.Linear(1000,1):cuda())
         --make sure weight is zero except for the correct class
