@@ -26,5 +26,6 @@ on the Gaussian added images will work on a new batch of Gaussian added images.
 th example.lua
 ```
 <img src="dog.jpg" width="224">
+Original Image with 97% confidence for Golden Retriever
 ![](./MSE_1e4/image+gaus/Ad_1.jpg)
 ![](./MSE_1e4/image+gaus+noise/Ad_1.jpg)
