@@ -14,9 +14,9 @@ local function noise(input)
     return noise:cuda()
 end
 
-local function adversarial_fast(model, loss, x, y, std, intensity)
+local function adversarial_fast(model, loss, x, y, std, intensity, copies)
     parameters, gradParameters = model:getParameters()
-    y = torch.CudaTensor(10):fill(y)
+    y = torch.CudaTensor(copies):fill(y)
    -- consider x as batch
     local batch = false
     if x:dim() == 3 then
@@ -29,7 +29,7 @@ local function adversarial_fast(model, loss, x, y, std, intensity)
     x:add(noise(x))
     
     local add_noise = noise(x)
-    for i = 0, 80 do
+    for i = 0, 200 do
         gradParameters:zero()
         --clone x so that we dont edit original batch
         local x_batch = x:clone()

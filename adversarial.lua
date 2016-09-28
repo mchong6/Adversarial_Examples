@@ -14,7 +14,7 @@ local function noise(input)
     return noise:cuda()
 end
 
-local function adversarial_fast(model, loss, x, y, std, intensity)
+local function adversarial_fast(model, loss, x, y, std, intensity, copies)
     parameters, gradParameters = model:getParameters()
    -- consider x as batch
     local batch = false
@@ -24,7 +24,7 @@ local function adversarial_fast(model, loss, x, y, std, intensity)
     end
     local theta = x:clone():zero()
    --create random copies of x
-    x = torch.repeatTensor(x, 10, 1, 1, 1):cuda()
+    x = torch.repeatTensor(x, copies, 1, 1, 1):cuda()
     x:add(noise(x))
     
     local add_noise = noise(x)

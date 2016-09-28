@@ -16,6 +16,7 @@ local mean = 118.380948/255  -- global mean used to train overfeat
 local std = 61.896913/255    -- global std used to train overfeat
 local intensity = 1          -- pixel intensity for gradient sign
 local choice = 1             -- 0 for minimize wrt to class, 1 for label
+local copies = 10            -- number of randomly generated Gaussian pictures
 
 local path_img = 'dog.jpg'
 local path_img2 = 'cat.jpg'
@@ -75,10 +76,10 @@ model = model:cuda()
 -- set loss function
 if choice == 0 then
     local loss = nn.MSECriterion():cuda() 
-    noise = ad.adversarial_fast(model, loss, imgA:clone(), idx, std, intensity)
+    noise = ad.adversarial_fast(model, loss, imgA:clone(), idx, std, intensity, copies)
 else
     local loss = nn.ClassNLLCriterion():cuda()
-    noise = ad_label.adversarial_fast(model, loss, imgA:clone(), label_nb, std, intensity)
+    noise = ad_label.adversarial_fast(model, loss, imgA:clone(), label_nb, std, intensity, copies)
 end
 -- generate adversarial examples
 
@@ -87,7 +88,7 @@ model:evaluate()
 model.modules[#model.modules] = nn.SoftMax()
 model = model:cuda()
 
-for i = 1, 10 do
+for i = 1, copies do
     --have to resize imgA to 4 dims for noise
     --first print add gaussian without trained noise
     local imgA_t = imgA:clone() + ad.noise(imgA:view(1, imgA:size(1), imgA:size(2), imgA:size(3)))
