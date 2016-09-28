@@ -27,9 +27,10 @@ th example.lua
 ```
 <img src="dog.jpg" width="224">
 Original Image with 97% confidence for Golden Retriever
+
 ![](./MSE_1e4/image+gaus/Ad_1.jpg)
 Image + Gaussian(0,10) used to train theta
 ![](./MSE_1e4/image+gaus+noise/Ad_1.jpg)
 Image + Gaussian(0,10) + theta. 95% confidence for Cocker Spaniel
-![](./MSE_1e4/diff.png)
+![](./MSE_1e4/diff.jpg)
 
