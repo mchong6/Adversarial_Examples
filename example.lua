@@ -10,21 +10,25 @@ local ad_label = require('adversarial_label');
 torch.setdefaulttensortype('torch.FloatTensor')
 torch.manualSeed(300)
 
+LR = 1e6
+epoch = 100
 local eye = 224              -- small net requires 231x231
 local label_nb = 286         -- label of 'bee'
 local mean = 118.380948/255  -- global mean used to train overfeat
 local std = 61.896913/255    -- global std used to train overfeat
 local intensity = 1          -- pixel intensity for gradient sign
-local choice = 1             -- 0 for minimize wrt to class, 1 for label
+local choice = 'entropy'       -- 0 for minimize wrt to class, 1 for label
 local copies = 10            -- number of randomly generated Gaussian pictures
 
+local dir_path = choice..'_'..LR
+dir = './' .. choice ..'_'..LR..'/'
 local path_img = 'dog.jpg'
 local path_img2 = 'cat.jpg'
 local path_model = 'model.t7'
--- this script requires pretrained overfeat model from the repo
--- (https://github.com/jhjin/overfeat-torch)
--- it will fetch the repo and create the model if it does not exist
-
+local file_results = io.open(dir.."results.txt", 'w')
+--create the directories needed
+os.execute("mkdir -p " .. dir_path .. '/image+gaus')
+os.execute("mkdir -p " .. dir_path .. '/image+gaus+noise')
 
 --local label = require('overfeat_label')
 local file = io.open("vgg_labels.txt", "r");
@@ -74,7 +78,7 @@ model.modules[#model.modules] = nn.LogSoftMax()
 model = model:cuda()
 
 -- set loss function
-if choice == 0 then
+if choice == 'MSE' then
     local loss = nn.MSECriterion():cuda() 
     noise = ad.adversarial_fast(model, loss, imgA:clone(), idx, std, intensity, copies)
 else
@@ -93,22 +97,23 @@ for i = 1, copies do
     --first print add gaussian without trained noise
     local imgA_t = imgA:clone() + ad.noise(imgA:view(1, imgA:size(1), imgA:size(2), imgA:size(3)))
     --save gaussian +  image
-    image.save("./original/Ad_"..i..".jpg", img_revert(imgA_t)) 
+    image.save(dir.."/image+gaus/Ad_"..i..".jpg", img_revert(imgA_t)) 
     --add the trained noise
     imgA_t:add(noise):cuda()
     local pred = model:forward(imgA_t)
     local val, idx = pred:max(pred:dim())
     print('==> adversarial:', label[ idx[1] ], 'confidence:', val[1])
-    image.save("./results/Ad_"..i..".jpg", img_revert(imgA_t))
+    image.save(dir.."/image+gaus+noise/Ad_"..i..".jpg", img_revert(imgA_t))
+    file_results:write("Image"..i..": "..label[idx[1]].." with confidence: ".. val[1], '\n')
 end
 
 local imgB_t = imgB:clone() + noise
 imgB_t = imgB_t:cuda()
 
-image.save("diff.jpg", img_revert(torch.reshape(noise, 3, eye, eye)))
+image.save(dir.."diff.jpg", img_revert(torch.reshape(noise, 3, eye, eye)))
 
 print('==> original:', label[ idx[1] ], 'confidence:', val[1])
-
+file_results:close()
 --add this noise to other images to see if it affects classification
 -- check prediction results
 --[[local pred = model:forward(imgB)
