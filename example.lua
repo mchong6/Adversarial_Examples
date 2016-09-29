@@ -10,7 +10,7 @@ local ad_label = require('adversarial_label');
 torch.setdefaulttensortype('torch.FloatTensor')
 torch.manualSeed(300)
 
-LR = 1e6
+LR = 1e4
 epoch = 100
 local eye = 224              -- small net requires 231x231
 local label_nb = 286         -- label of 'bee'
@@ -22,10 +22,11 @@ local copies = 10            -- number of randomly generated Gaussian pictures
 
 local dir_path = choice..'_'..LR
 dir = './' .. choice ..'_'..LR..'/'
-local path_img = 'dog.jpg'
-local path_img2 = 'cat.jpg'
+local img_path = './images/'
+local path_img = img_path..'dog.jpg'
+local path_img2 = img_path..'cat.jpg'
 local path_model = 'model.t7'
-local file_results = io.open(dir.."results.txt", 'w')
+local file_results = io.open(dir.."results.txt", "w")
 --create the directories needed
 os.execute("mkdir -p " .. dir_path .. '/image+gaus')
 os.execute("mkdir -p " .. dir_path .. '/image+gaus+noise')
