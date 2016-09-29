@@ -25,4 +25,17 @@ on the Gaussian added images will work on a new batch of Gaussian added images.
 ```bash
 th example.lua
 ```
-![](dog.jpg)
+<img src="dog.jpg" width="224">
+Original Image with 97% confidence for Golden Retriever
+
+![](./MSE_1e4/image+gaus/Ad_1.jpg)
+Image + Gaussian(0,10) used to train theta
+
+![](./MSE_1e4/diff.jpg)
+Theta
+
+![](./MSE_1e4/image+gaus+noise/Ad_1.jpg)
+Image + Gaussian(0,10) + theta. 95% confidence for Cocker Spaniel
+
+Here I used MSE to reduce the actual classification of the image. The resulting image's high
+confidence classification is very close to the actual classification.
