@@ -78,12 +78,14 @@ local val, idx = pred:max(pred:dim())
 model.modules[#model.modules] = nn.LogSoftMax()
 model = model:cuda()
 
+local mse = nn.MSECriterion()
+local crossentropy = nn.ClassNLLCriterion()
 -- set loss function
 if choice == 'MSE' then
-    local loss = nn.MSECriterion():cuda() 
+    local loss = nn.ParallelCriterion():add(mse, 0.5):add(crossentropy)():cuda() 
     noise = ad.adversarial_fast(model, loss, imgA:clone(), idx, std, intensity, copies)
 else
-    local loss = nn.ClassNLLCriterion():cuda()
+    local loss = nn.ParallelCriterion():add(mse, 0.5):add(mse)():cuda() 
     noise = ad_label.adversarial_fast(model, loss, imgA:clone(), label_nb, std, intensity, copies)
 end
 -- generate adversarial examples
