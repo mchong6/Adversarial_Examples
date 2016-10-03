@@ -41,6 +41,8 @@ local function adversarial_fast(model, loss, x, y, std, intensity, copies)
         --show that extraction of class is correct
         --print(model.modules[#model.modules-1].output[1][y[1]])
         local f = loss:forward(y_hat, y) 
+        --minimize theta
+        local f2 = loss:forward(theta, 0)
         print(f)
         if plot == nil then
             plot = torch.Tensor(1):fill(f)
@@ -48,7 +50,8 @@ local function adversarial_fast(model, loss, x, y, std, intensity, copies)
             plot = plot:cat(torch.Tensor(1):fill(f))
         end
         local cost = loss:backward(y_hat, y) 
-        local x_grad = model:updateGradInput(theta, cost)
+        local cost2 = loss:backward(theta, 0)
+        local x_grad = model:updateGradInput(theta, cost+cost2)
         local grad = x_grad * LR
         theta = theta - grad
     end
