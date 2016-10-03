@@ -41,8 +41,8 @@ local function adversarial_fast(model, loss, x, y, std, intensity, copies)
         --show that extraction of class is correct
         --print(model.modules[#model.modules-1].output[1][y[1]])
         --minmize theta too using parallecriterion
-        y_hat = {y_hat, theta}
-        y = {y, 0}
+        y_hat = {theta, y_hat}
+        y = {0, y}
         local f = loss:forward(y_hat, y) 
         print(f)
         if plot == nil then
