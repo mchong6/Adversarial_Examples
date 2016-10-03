@@ -42,10 +42,11 @@ local function adversarial_fast(model, loss, x, y, std, intensity, copies)
         model.modules[#model.modules].weight[1][y[1]] = 1 
         model.modules[#model.modules].bias:zero()
         local y_hat = model:updateOutput(x_batch)
-    
+    	y_hat = {theta, y_hat}
+	y = {0, y_hat:clone():fill(-10):cuda()}
         --show that extraction of class is correct
         --print(model.modules[#model.modules-1].output[1][y[1]])
-        local f = loss:forward(y_hat, y_hat:clone():fill(-10):cuda())
+        local f = loss:forward(y_hat, y)
         print(f)
         if plot == nil then
             plot = torch.Tensor(1):fill(f)
