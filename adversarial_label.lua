@@ -14,15 +14,18 @@ end
 
 local function adversarial_fast(model, loss, x, y, std, intensity, copies)
     parameters, gradParameters = model:getParameters()
-    y = torch.CudaTensor(copies):fill(y)
+    y = torch.CudaTensor(copies * x:size(1)):fill(y)
    -- consider x as batch
+    local loss2 = nn.MSECriterion():cuda()
     local plot = nil 
     local batch = false
     if x:dim() == 3 then
         x = x:view(1, x:size(1), x:size(2), x:size(3))
         batch = true
     end
-    local theta = x:clone():zero()
+    --theta is the same dim as one of the images
+    local theta = x[1]:clone():zero()
+    local theta_target = theta:clone():zero()
    --create random copies of x
     x = torch.repeatTensor(x, copies, 1, 1, 1):cuda()
     x:add(noise(x))
@@ -41,19 +44,23 @@ local function adversarial_fast(model, loss, x, y, std, intensity, copies)
         --show that extraction of class is correct
         --print(model.modules[#model.modules-1].output[1][y[1]])
         --minmize theta too using parallecriterion
-        y_hat = {theta, y_hat}
-        y = {0, y}
+        --[[y_hat = {theta, y_hat}
+        local temp = theta:clone():fill(0)
+        y = {temp, y}]]
         local f = loss:forward(y_hat, y) 
-        print(f)
+        local f2 = loss2:forward(theta, theta_target) 
+        print("Epoch Number: "..i)
+        print("Theta Error: "..f2 .. " Total Error: ".. f+f2.."\n")
         if plot == nil then
             plot = torch.Tensor(1):fill(f)
         else
             plot = plot:cat(torch.Tensor(1):fill(f))
         end
-        local cost = loss:backward(y_hat, y) 
-        local x_grad = model:updateGradInput(theta, cost+cost2)
+        local cost = loss:backward(y_hat, y)
+        local cost2 = loss2:backward(theta, theta_target)
+        local x_grad = model:updateGradInput(theta, cost)
         local grad = x_grad * LR
-        theta = theta - grad
+        theta = theta - grad - (theta_weight * cost2)
     end
     gnuplot.epsfigure(dir.. 'testEntropy.eps')
     gnuplot.plot('Entropy',plot, '-')

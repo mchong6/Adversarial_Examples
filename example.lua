@@ -10,27 +10,33 @@ local ad_label = require('adversarial_label');
 torch.setdefaulttensortype('torch.FloatTensor')
 torch.manualSeed(300)
 
-LR = 1e4
-epoch = 100
+LR = 1e7
+epoch = 200
+theta_weight = 1e3
 local eye = 224              -- small net requires 231x231
 local label_nb = 286         -- label of 'bee'
 local mean = 118.380948/255  -- global mean used to train overfeat
 local std = 61.896913/255    -- global std used to train overfeat
 local intensity = 1          -- pixel intensity for gradient sign
 local choice = 'entropy'       -- 0 for minimize wrt to class, 1 for label
-local copies = 10            -- number of randomly generated Gaussian pictures
+local copies = 1            -- number of randomly generated Gaussian pictures
 
 local dir_path = choice..'_'..LR
 dir = './' .. choice ..'_'..LR..'/'
 local img_path = './images/'
-local path_img = img_path..'dog.jpg'
-local path_img2 = img_path..'cat.jpg'
+--local path_img = img_path..'dog.jpg'
 local path_model = 'model.t7'
 local file_results = io.open(dir.."results.txt", "w")
 --create the directories needed
 os.execute("mkdir -p " .. dir_path .. '/image+gaus')
 os.execute("mkdir -p " .. dir_path .. '/image+gaus+noise')
 
+-- create a table of image paths
+local images_path = {}
+f = io.popen('ls '.. img_path)
+for image in f:lines() do
+    table.insert(images_path, img_path..image)
+end
 --local label = require('overfeat_label')
 local file = io.open("vgg_labels.txt", "r");
 local label = {}
@@ -64,29 +70,44 @@ function img_revert(img)
     clone:div(255)
     return clone
 end
-local imgA = img_resize(path_img)
-local imgB = img_resize(path_img2)
+--local imgA = img_resize(path_img)
+--local imgB = img_resize(path_img2)
+
+--resize all images and store in a tensor.
+local images = nil
+for key, image in pairs(images_path) do
+    --resize to batch
+    local temp_img = img_resize(image)
+    temp_img = temp_img:view(1, temp_img:size(1), temp_img:size(2), temp_img:size(3))
+    if images == nil then
+        images = torch.CudaTensor(temp_img)
+    else
+        images = images:cat(torch.CudaTensor(temp_img), 1)
+    end
+end
+images = images:cuda()
 -- get trained model (switch softmax to logsoftmax)
 --local model = torch.load(path_model)
 local model = loadcaffe.load('VGG_ILSVRC_19_layers_deploy.prototxt', 'VGG_ILSVRC_19_layers.caffemodel', 'nn'):cuda()  
 model:evaluate()
 -- check prediction results
-local pred = model:forward(imgA)
+local pred = model:forward(images)
 local val, idx = pred:max(pred:dim())
 
 --change last layer to logsoftmax
 model.modules[#model.modules] = nn.LogSoftMax()
 model = model:cuda()
 
-local mse = nn.MSECriterion()
-local crossentropy = nn.ClassNLLCriterion()
+--local mse = nn.MSECriterion():cuda()
+--local crossentropy = nn.ClassNLLCriterion():cuda()
 -- set loss function
 if choice == 'MSE' then
-    local loss = nn.ParallelCriterion():add(mse, 0.5):add(crossentropy)():cuda() 
-    noise = ad.adversarial_fast(model, loss, imgA:clone(), idx, std, intensity, copies)
+    --local loss = nn.ParallelCriterion():add(mse, 0.5):add(mse)():cuda() 
+    noise = ad.adversarial_fast(model, loss, images:clone(), idx, std, intensity, copies)
 else
-    local loss = nn.ParallelCriterion():add(mse, 0.5):add(mse)():cuda() 
-    noise = ad_label.adversarial_fast(model, loss, imgA:clone(), label_nb, std, intensity, copies)
+    --local loss = nn.ParallelCriterion():add(mse, 0.5):add(crossentropy):cuda() 
+    local loss = nn.ClassNLLCriterion():cuda()
+    noise = ad_label.adversarial_fast(model, loss, images:clone(), label_nb, std, intensity, copies)
 end
 -- generate adversarial examples
 
@@ -95,38 +116,30 @@ model:evaluate()
 model.modules[#model.modules] = nn.SoftMax()
 model = model:cuda()
 
-for i = 1, copies do
+--for i = 1, copies do
     --have to resize imgA to 4 dims for noise
     --first print add gaussian without trained noise
-    local imgA_t = imgA:clone() + ad.noise(imgA:view(1, imgA:size(1), imgA:size(2), imgA:size(3)))
-    --save gaussian +  image
-    image.save(dir.."/image+gaus/Ad_"..i..".jpg", img_revert(imgA_t)) 
-    --add the trained noise
-    imgA_t:add(noise):cuda()
-    local pred = model:forward(imgA_t)
-    local val, idx = pred:max(pred:dim())
-    print('==> adversarial:', label[ idx[1] ], 'confidence:', val[1])
-    image.save(dir.."/image+gaus+noise/Ad_"..i..".jpg", img_revert(imgA_t))
-    file_results:write("Image"..i..": "..label[idx[1]].." with confidence: ".. val[1], '\n')
+local images_t = images:clone() + ad.noise(images)
+--save gaussian + image
+for i = 1, images_t:size(1) do
+    image.save(dir.."/image+gaus/Ad_"..i..".jpg", img_revert(images_t[i])) 
 end
+--resize, repeat and add the trained noise
+noise = noise:view(1, noise:size(1), noise:size(2), noise:size(3)) 
+noise = torch.repeatTensor(noise, images_t:size(1), 1, 1, 1)
+images_t:add(noise):cuda()
+local predict = model:forward(images_t)
+local value, index = predict:max(predict:dim())
+for i = 1, predict:size(1) do
+    print('==> adversarial:', label[index[i][1] ], 'confidence:', value[i][1])
+    image.save(dir.."/image+gaus+noise/Ad_"..i..".jpg", img_revert(images_t[i]))
+    file_results:write("Image"..i..": "..label[index[i][1]].." with confidence: ".. value[i][1], '\n')
+end
+--end
 
-local imgB_t = imgB:clone() + noise
-imgB_t = imgB_t:cuda()
+image.save(dir.."diff.jpg", img_revert(torch.reshape(noise[1], 3, eye, eye)))
 
-image.save(dir.."diff.jpg", img_revert(torch.reshape(noise, 3, eye, eye)))
-
-print('==> original:', label[ idx[1] ], 'confidence:', val[1])
+for i = 1, pred:size(1) do
+    print('==> original:', label[ idx[i][1] ], 'confidence:', val[i][1])
+end
 file_results:close()
---add this noise to other images to see if it affects classification
--- check prediction results
---[[local pred = model:forward(imgB)
-local val, idx = pred:max(pred:dim())
-print('==> original:', label[ idx[1] ], 'confidence:', val[1])
-
-local pred = model:forward(imgB_t)
-local val, idx = pred:max(pred:dim())
-print('==> adversarial:', label[ idx[1] ], 'confidence:', val[1])
-
-print('==> mean absolute diff between the original and adversarial images[min/max]:', torch.add(imgB, -imgB_t):abs():mean())
-image.save("test2.jpg", imgB)
-image.save("test2_t.jpg", imgB_t)]]
