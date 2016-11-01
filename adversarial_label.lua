@@ -18,6 +18,7 @@ local function adversarial_fast(model, loss, x, y, std, intensity, copies)
    -- consider x as batch
     local loss2 = nn.MSECriterion():cuda()
     local plot = nil 
+    local plot_noise = nil 
     local batch = false
     if x:dim() == 3 then
         x = x:view(1, x:size(1), x:size(2), x:size(3))
@@ -31,6 +32,10 @@ local function adversarial_fast(model, loss, x, y, std, intensity, copies)
     x:add(noise(x))
     
     for i = 0, epoch do
+        -- drop LR of MSE every epoch cycle
+        --[[if i % 50 == 0 then 
+            theta_weight = theta_weight / 2 
+        end]]
         gradParameters:zero()
         --clone x so that we dont edit original batch
         local x_batch = x:clone()
@@ -50,11 +55,13 @@ local function adversarial_fast(model, loss, x, y, std, intensity, copies)
         local f = loss:forward(y_hat, y) 
         local f2 = loss2:forward(theta, theta_target) 
         print("Epoch Number: "..i)
-        print("Theta Error: "..f2 .. " Total Error: ".. f+f2.."\n")
+        print("Adv. Error: "..f.." Theta Error: "..f2 .. " Total Error: ".. f+f2.."\n")
         if plot == nil then
             plot = torch.Tensor(1):fill(f)
+            plot_noise = torch.Tensor(1):fill(f+f2)
         else
             plot = plot:cat(torch.Tensor(1):fill(f))
+            plot_noise = plot_noise:cat(torch.Tensor(1):fill(f+f2))
         end
         local cost = loss:backward(y_hat, y)
         local cost2 = loss2:backward(theta, theta_target)
@@ -63,7 +70,7 @@ local function adversarial_fast(model, loss, x, y, std, intensity, copies)
         theta = theta - grad - (theta_weight * cost2)
     end
     gnuplot.epsfigure(dir.. 'testEntropy.eps')
-    gnuplot.plot('Entropy',plot, '-')
+    gnuplot.plot({'Entropy',plot, '-'}, {'Noise', plot_noise, '.'})
     gnuplot.plotflush()
    --[[if batch then
       x = x:view(x:size(2), x:size(3), x:size(4))

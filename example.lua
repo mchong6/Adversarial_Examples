@@ -10,22 +10,26 @@ local ad_label = require('adversarial_label');
 torch.setdefaulttensortype('torch.FloatTensor')
 torch.manualSeed(300)
 
-LR = 1e6
-epoch = 300 
-theta_weight = 1e3
+cmd = torch.CmdLine()
+cmd:option('-copies', 10)
+params = cmd:parse(arg)
+
+LR = 5e5
+epoch = 150
+theta_weight = 1e1
 local eye = 224              -- small net requires 231x231
-local label_nb = 286         -- label of 'bee'
+local label_nb = 45          -- label of 'bee'
 local mean = 118.380948/255  -- global mean used to train overfeat
 local std = 61.896913/255    -- global std used to train overfeat
 local intensity = 1          -- pixel intensity for gradient sign
 local choice = 'entropy'       -- 0 for minimize wrt to class, 1 for label
-local copies = 10            -- number of randomly generated Gaussian pictures
+--local copies = 10            -- number of randomly generated Gaussian pictures
 local multi_pic = 0
 
-local dir_path = choice..'_'..LR
-dir = './' .. choice ..'_'..LR..'/'
+local dir_path = choice..'_'..LR..'_'..params.copies..'copies'
+dir = './' .. choice ..'_'..LR..'_'..params.copies..'copies/'
 local img_path = './images/'
-local path_img = img_path..'dog.jpg'
+local path_img = img_path..'cat.jpg'
 
 local path_model = 'model.t7'
 --create the directories needed
@@ -107,10 +111,11 @@ model = model:cuda()
 
 -- set loss function
 if choice == 'MSE' then
-    noise = ad.adversarial_fast(model, loss, images:clone(), idx, std, intensity, copies)
+    local loss = nn.MSECriterion():cuda()
+    noise = ad.adversarial_fast(model, loss, images:clone(), idx, std, intensity, params.copies)
 else
     local loss = nn.ClassNLLCriterion():cuda()
-    noise = ad_label.adversarial_fast(model, loss, images:clone(), label_nb, std, intensity, copies)
+    noise = ad_label.adversarial_fast(model, loss, images:clone(), label_nb, std, intensity, params.copies)
 end
 -- generate adversarial examples
 
@@ -119,7 +124,7 @@ model:evaluate()
 model.modules[#model.modules] = nn.SoftMax()
 model = model:cuda()
 
-for j = 1, copies do
+for j = 1, params.copies do
     --have to resize imgA to 4 dims for noise
     --first print add gaussian without trained noise
     local images_t = images:clone() + ad.noise(images)
